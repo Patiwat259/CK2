@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ใบขนส่งสินค้า</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-pink-100 via-blue-50 to-blue-100 min-h-screen">
+    <div class="max-w-3xl mx-auto mt-10 p-6 bg-white/90 rounded-2xl shadow-xl border border-pink-100">
+        <h1 class="text-4xl font-extrabold text-center text-pink-400 mb-10 tracking-tight drop-shadow">ค้นหาใบขนส่งสินค้า</h1>
+        <!-- Admin Form Section -->
+        <div id="adminFormSection" class="bg-pink-50 p-8 rounded-xl shadow-inner mb-8 hidden">
+            <h2 class="text-2xl font-semibold text-pink-400 mb-6">ข้อมูลใบขนส่ง (สำหรับ Admin เท่านั้น)</h2>
+            <form id="shippingForm" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                    <label for="invoiceNumber" class="block text-pink-400 text-sm font-medium mb-2">เลขอินวอยซ์:</label>
+                    <input type="text" id="invoiceNumber" name="invoiceNumber" class="bg-pink-100 rounded-xl px-4 py-2 focus:bg-blue-50 focus:ring-2 focus:ring-pink-300" required>
+                </div>
+                <div>
+                    <label for="shopName" class="block text-pink-400 text-sm font-medium mb-2">ชื่อร้านค้า:</label>
+                    <input type="text" id="shopName" name="shopName" class="bg-pink-100 rounded-xl px-4 py-2 focus:bg-blue-50 focus:ring-2 focus:ring-pink-300" required>
+                </div>
+                <div>
+                    <label for="trackingNumber" class="block text-pink-400 text-sm font-medium mb-2">เลขที่ใบขนส่ง:</label>
+                    <input type="text" id="trackingNumber" name="trackingNumber" class="bg-pink-100 rounded-xl px-4 py-2 focus:bg-blue-50 focus:ring-2 focus:ring-pink-300" required>
+                </div>
+                <div>
+                    <label for="itemImageFile" class="block text-pink-400 text-sm font-medium mb-2">อัปโหลดรูปภาพสินค้า:</label>
+                    <input type="file" id="itemImageFile" name="itemImageFile" accept="image/*" class="bg-pink-100 rounded-xl px-4 py-2 focus:bg-blue-50 focus:ring-2 focus:ring-pink-300">
+                </div>
+                <div class="md:col-span-2">
+                    <label for="notes" class="block text-pink-400 text-sm font-medium mb-2">หมายเหตุ:</label>
+                    <textarea id="notes" name="notes" rows="2" class="bg-pink-100 rounded-xl px-4 py-2 focus:bg-blue-50 focus:ring-2 focus:ring-pink-300"></textarea>
+                </div>
+                <div class="md:col-span-2 flex justify-center mt-4">
+                    <button type="submit" class="bg-gradient-to-r from-pink-400 to-blue-400 text-white font-semibold px-8 py-2 rounded-xl shadow hover:scale-105 transition">เพิ่มใบขนส่ง</button>
+                </div>
+            </form>
+        </div>
+        <h2 class="text-2xl font-semibold text-pink-400 mb-6 mt-8">รายการใบขนส่ง</h2>
+        <!-- Search Input Field and Admin Toggle -->
+        <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-6">
+            <div class="w-full md:w-2/3">
+                <label for="searchInput" class="block text-pink-400 text-sm font-medium mb-2">ค้นหา (เลขอินวอยซ์ / ชื่อร้านค้า):</label>
+                <input type="text" id="searchInput" name="searchInput" class="bg-blue-50 rounded-xl px-4 py-2 focus:bg-pink-50 focus:ring-2 focus:ring-blue-300 w-full" placeholder="พิมพ์เลขอินวอยซ์ หรือ ชื่อร้านค้าเพื่อค้นหา...">
+            </div>
+            <div class="w-full md:w-1/3 flex justify-end md:justify-start">
+                <button id="toggleAdminBtn" class="bg-gradient-to-r from-pink-400 to-blue-400 text-white font-semibold px-6 py-2 rounded-xl shadow hover:scale-105 transition"></button>
+                    เข้าสู่ระบบ Admin
+                </button>
+            </div>
+        </div>
+        <div id="manifestList" class="space-y-4">
+            <div class="text-center text-gray-400 p-4" id="noManifestsMessage">
+                ยังไม่มีใบขนส่ง กรุณาเพิ่มข้อมูลด้านบน
+            </div>
+        </div>
+    </div>
+    <!-- Login Modal -->
+    <div id="loginModal" class="fixed inset-0 bg-pink-200/40 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-2xl shadow-xl p-8 w-full max-w-sm relative">
+            <button id="closeLoginModal" class="absolute top-4 right-4 text-pink-400 text-2xl font-bold hover:text-blue-400">&times;</button>
+            <h3 class="text-2xl font-semibold text-pink-400 mb-6 text-center">เข้าสู่ระบบ Admin</h3>
+            <div class="mb-4">
+                <label for="adminUsername" class="block text-pink-400 text-sm font-medium mb-2">ชื่อผู้ใช้:</label>
+                <input type="text" id="adminUsername" class="bg-blue-50 rounded-xl px-4 py-2 w-full focus:bg-pink-50 focus:ring-2 focus:ring-blue-300" placeholder="username">
+            </div>
+            <div class="mb-6">
+                <label for="adminPassword" class="block text-pink-400 text-sm font-medium mb-2">รหัสผ่าน:</label>
+                <input type="password" id="adminPassword" class="bg-blue-50 rounded-xl px-4 py-2 w-full focus:bg-pink-50 focus:ring-2 focus:ring-blue-300" placeholder="password">
+            </div>
+            <p id="loginErrorMessage" class="text-pink-500 text-center mb-4 hidden">ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง</p>
+            <button id="loginSubmitBtn" class="bg-gradient-to-r from-pink-400 to-blue-400 text-white font-semibold px-6 py-2 rounded-xl w-full shadow hover:scale-105 transition">เข้าสู่ระบบ</button>
+        </div>
+    </div>
+    <!-- Image Modal -->
+    <div id="imageModal" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 hidden">
+        <div class="relative">
+            <button id="closeImageModal" class="absolute top-2 right-2 text-white text-2xl font-bold hover:text-pink-400">&times;</button>
+            <img id="enlargedImage" src="" alt="Enlarged Product Image" class="max-w-[90vw] max-h-[90vh] rounded-xl shadow-xl">
+        </div>
+    </div>
+    <script>
+        // JS logic unchanged, just update modal display to use "hidden"/"flex"
+        let manifests = [];
+        let isAdminMode = false;
+        let isLoggedIn = false;
+        // Multiple admin accounts
+        const ADMIN_ACCOUNTS = [
+            { username: '813', password: '813' },
+            { username: 'patiwat', password: '1234' },
+            { username: 'aeem', password: '5234' },
+            { username: 'nura', password: '1234' },
+            { username: 'muy', password: '1234' }
+        ];
+        document.addEventListener('DOMContentLoaded', () => {
+            const shippingForm = document.getElementById('shippingForm');
+            const manifestList = document.getElementById('manifestList');
+            const noManifestsMessage = document.getElementById('noManifestsMessage');
+            const searchInput = document.getElementById('searchInput');
+            const toggleAdminBtn = document.getElementById('toggleAdminBtn');
+            const adminFormSection = document.getElementById('adminFormSection');
+            const loginModal = document.getElementById('loginModal');
+            const closeLoginModalBtn = document.getElementById('closeLoginModal');
+            const adminUsernameInput = document.getElementById('adminUsername');
+            const adminPasswordInput = document.getElementById('adminPassword');
+            const loginSubmitBtn = document.getElementById('loginSubmitBtn');
+            const loginErrorMessage = document.getElementById('loginErrorMessage');
+            const imageModal = document.getElementById('imageModal');
+            const closeImageModalBtn = document.getElementById('closeImageModal');
+            const enlargedImage = document.getElementById('enlargedImage');
+            const savedManifests = localStorage.getItem('shippingManifests');
+            if (savedManifests) manifests = JSON.parse(savedManifests);
+            if (sessionStorage.getItem('loggedInAdmin') === 'true') {
+                isLoggedIn = true;
+                isAdminMode = true;
+                toggleAdminBtn.textContent = 'ออกจากระบบ Admin';
+                adminFormSection.classList.remove('hidden');
+            } else {
+                toggleAdminBtn.textContent = 'เข้าสู่ระบบ Admin';
+                adminFormSection.classList.add('hidden');
+            }
+            const saveManifests = () => localStorage.setItem('shippingManifests', JSON.stringify(manifests));
+            const generateUniqueId = () => `manifest-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+            const renderManifests = () => {
+                manifestList.innerHTML = '';
+                const searchTerm = searchInput.value.toLowerCase();
+                let visibleCardsCount = 0;
+                manifests.forEach(data => {
+                    const matchesSearch = searchTerm === '' ||
+                        data.invoiceNumber.toLowerCase().includes(searchTerm) ||
+                        data.shopName.toLowerCase().includes(searchTerm);
+                    if (!matchesSearch) return;
+                    const manifestCard = document.createElement('div');
+                    manifestCard.id = data.id;
+                    manifestCard.className = 'flex gap-6 items-start bg-pink-50/80 rounded-xl shadow border border-pink-100 p-6 relative';
+                    manifestCard.innerHTML = `
+                        <img src="${data.imageUrl}" alt="${data.imageAlt}" class="w-24 h-24 object-cover rounded-xl border border-pink-200 shadow cursor-pointer bg-pink-100" data-full-image-src="${data.imageUrl}" onerror="this.onerror=null;this.src='https://placehold.co/100x100/e2e8f0/475569?text=Error';" />
+                        <div class="flex-grow">
+                            <h3 class="text-lg font-bold text-pink-400 mb-2">ใบขนส่งเลขที่: <span class="editable-field" data-field="trackingNumber">${data.trackingNumber}</span></h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                                <div>
+                                    <p><span class="font-semibold text-pink-400">เลขอินวอยซ์:</span> <span class="editable-field" data-field="invoiceNumber">${data.invoiceNumber}</span></p>
+                                    <p><span class="font-semibold text-pink-400">ชื่อร้านค้า:</span> <span class="editable-field" data-field="shopName">${data.shopName}</span></p>
+                                </div>
+                                <div class="md:col-span-2">
+                                    ${data.notes ? `<p><span class="font-semibold text-pink-400">หมายเหตุ:</span> <span class="editable-field" data-field="notes">${data.notes}</span></p>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="absolute top-4 right-4 flex gap-2">
+                            <button type="button" class="bg-blue-200 text-blue-700 px-3 py-1 rounded hover:bg-blue-300 font-medium btn-edit ${isAdminMode && isLoggedIn ? '' : 'hidden'}" data-manifest-id="${data.id}">แก้ไข</button>
+                            <button type="button" class="bg-pink-400 text-white px-3 py-1 rounded hover:bg-pink-500 font-medium btn-save hidden" data-manifest-id="${data.id}">บันทึก</button>
+                            <button type="button" class="bg-gray-200 text-gray-700 px-3 py-1 rounded hover:bg-gray-300 font-medium btn-cancel hidden" data-manifest-id="${data.id}">ยกเลิก</button>
+                            <button type="button" class="bg-red-200 text-red-700 px-3 py-1 rounded hover:bg-red-300 font-medium btn-delete ${isAdminMode && isLoggedIn ? '' : 'hidden'}" data-manifest-id="${data.id}">ลบ</button>
+                        </div>
+                    `;
+                    const editBtn = manifestCard.querySelector('.btn-edit');
+                    const saveBtn = manifestCard.querySelector('.btn-save');
+                    const cancelBtn = manifestCard.querySelector('.btn-cancel');
+                    const deleteBtn = manifestCard.querySelector('.btn-delete');
+                    const editableFields = manifestCard.querySelectorAll('.editable-field');
+                    const manifestImage = manifestCard.querySelector('img');
+                    manifestImage.addEventListener('click', () => {
+                        enlargedImage.src = manifestImage.dataset.fullImageSrc;
+                        imageModal.classList.remove('hidden');
+                        imageModal.classList.add('flex');
+                    });
+                    editBtn.addEventListener('click', () => {
+                        editableFields.forEach(field => {
+                            field.contentEditable = true;
+                            field.classList.add('bg-blue-50', 'rounded', 'px-1');
+                            field.dataset.originalContent = field.textContent;
+                        });
+                        editBtn.classList.add('hidden');
+                        deleteBtn.classList.add('hidden');
+                        saveBtn.classList.remove('hidden');
+                        cancelBtn.classList.remove('hidden');
+                        if (editableFields.length > 0) editableFields[0].focus();
+                    });
+                    saveBtn.addEventListener('click', () => {
+                        const manifestId = data.id;
+                        const manifestIndex = manifests.findIndex(m => m.id === manifestId);
+                        if (manifestIndex > -1) {
+                            editableFields.forEach(field => {
+                                const fieldName = field.dataset.field;
+                                manifests[manifestIndex][fieldName] = field.textContent.trim();
+                                field.contentEditable = false;
+                                field.classList.remove('bg-blue-50', 'rounded', 'px-1');
+                            });
+                            saveManifests();
+                            renderManifests();
+                        }
+                    });
+                    cancelBtn.addEventListener('click', () => {
+                        editableFields.forEach(field => {
+                            field.textContent = field.dataset.originalContent;
+                            field.contentEditable = false;
+                            field.classList.remove('bg-blue-50', 'rounded', 'px-1');
+                        });
+                        renderManifests();
+                    });
+                    deleteBtn.addEventListener('click', () => {
+                        const idToDelete = data.id;
+                        manifests = manifests.filter(m => m.id !== idToDelete);
+                        saveManifests();
+                        renderManifests();
+                    });
+                    manifestList.prepend(manifestCard);
+                    visibleCardsCount++;
+                });
+                if (visibleCardsCount === 0 && searchTerm === '') {
+                    noManifestsMessage.textContent = 'ยังไม่มีใบขนส่ง กรุณาเพิ่มข้อมูลด้านบน';
+                    noManifestsMessage.classList.remove('hidden');
+                } else if (visibleCardsCount === 0 && searchTerm !== '') {
+                    noManifestsMessage.textContent = 'ไม่พบใบขนส่งที่ตรงกับคำค้นหา';
+                    noManifestsMessage.classList.remove('hidden');
+                } else {
+                    noManifestsMessage.classList.add('hidden');
+                }
+            };
+            shippingForm.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                const invoiceNumber = document.getElementById('invoiceNumber').value;
+                const shopName = document.getElementById('shopName').value;
+                const trackingNumber = document.getElementById('trackingNumber').value;
+                const itemImageFile = document.getElementById('itemImageFile').files[0];
+                const notes = document.getElementById('notes').value;
+                let imageUrl = `https://placehold.co/100x100/e2e8f0/475569?text=No+Image`;
+                let imageAlt = 'ไม่มีรูปภาพ';
+                if (itemImageFile) {
+                    imageUrl = await new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onload = (e) => resolve(e.target.result);
+                        reader.onerror = () => resolve(`https://placehold.co/100x100/e2e8f0/475569?text=Error`);
+                        reader.readAsDataURL(itemImageFile);
+                    });
+                    imageAlt = `รูปภาพของสินค้า`;
+                }
+                const newManifest = {
+                    id: generateUniqueId(),
+                    invoiceNumber,
+                    shopName,
+                    trackingNumber,
+                    imageUrl,
+                    imageAlt,
+                    notes
+                };
+                manifests.unshift(newManifest);
+                saveManifests();
+                shippingForm.reset();
+                renderManifests();
+            });
+            searchInput.addEventListener('input', renderManifests);
+            toggleAdminBtn.addEventListener('click', () => {
+                if (isLoggedIn) {
+                    isLoggedIn = false;
+                    isAdminMode = false;
+                    sessionStorage.removeItem('loggedInAdmin');
+                    toggleAdminBtn.textContent = 'เข้าสู่ระบบ Admin';
+                    adminFormSection.classList.add('hidden');
+                    renderManifests();
+                } else {
+                    loginModal.classList.remove('hidden');
+                    loginModal.classList.add('flex');
+                    adminUsernameInput.value = '';
+                    adminPasswordInput.value = '';
+                    loginErrorMessage.classList.add('hidden');
+                    adminUsernameInput.focus();
+                }
+            });
+            closeLoginModalBtn.addEventListener('click', () => {
+                loginModal.classList.add('hidden');
+                loginModal.classList.remove('flex');
+            });
+            loginSubmitBtn.addEventListener('click', () => {
+                const username = adminUsernameInput.value;
+                const password = adminPasswordInput.value;
+                const foundAccount = ADMIN_ACCOUNTS.find(acc => acc.username === username && acc.password === password);
+                if (foundAccount) {
+                    isLoggedIn = true;
+                    isAdminMode = true;
+                    sessionStorage.setItem('loggedInAdmin', 'true');
+                    loginModal.classList.add('hidden');
+                    loginModal.classList.remove('flex');
+                    toggleAdminBtn.textContent = 'ออกจากระบบ Admin';
+                    adminFormSection.classList.remove('hidden');
+                    renderManifests();
+                } else {
+                    loginErrorMessage.classList.remove('hidden');
+                }
+            });
+            closeImageModalBtn.addEventListener('click', () => {
+                imageModal.classList.add('hidden');
+                imageModal.classList.remove('flex');
+            });
+            window.addEventListener('click', (event) => {
+                if (event.target === loginModal) {
+                    loginModal.classList.add('hidden');
+                    loginModal.classList.remove('flex');
+                }
+                if (event.target === imageModal) {
+                    imageModal.classList.add('hidden');
+                    imageModal.classList.remove('flex');
+                }
+            });
+            renderManifests();
+        });
+    </script>
+</body>
+</html>
